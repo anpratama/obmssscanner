@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OB · MSS Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050810;
+    --bg2: #080d1a;
+    --bg3: #0c1220;
+    --grid: rgba(0,200,255,0.04);
+    --border: rgba(0,200,255,0.12);
+    --border2: rgba(0,200,255,0.25);
+    --cyan: #00c8ff;
+    --cyan2: #00eeff;
+    --green: #00ff88;
+    --red: #ff3366;
+    --yellow: #ffcc00;
+    --orange: #ff8800;
+    --dim: rgba(0,200,255,0.4);
+    --text: #b8d4e8;
+    --text2: #6a8fa8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,150,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: rgba(0,200,255,0.06);
+  }
+
+  .logo-icon::before {
+    content: '◈';
+    color: var(--cyan);
+    font-size: 20px;
+  }
+
+  .logo-text h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--cyan2);
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px rgba(0,200,255,0.5);
+  }
+
+  .logo-text span {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid rgba(0,255,136,0.3);
+    background: rgba(0,255,136,0.05);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green);
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 1.5s ease infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.6); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,255,136,0); }
+  }
+
+  .scan-time {
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  /* CONTROLS */
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+  }
+
+  .ctrl-label {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  select, input[type="range"] {
+    background: transparent;
+    border: none;
+    color: var(--cyan);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  select option {
+    background: var(--bg2);
+    color: var(--text);
+  }
+
+  .btn-scan {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border: 1px solid var(--cyan);
+    background: rgba(0,200,255,0.08);
+    color: var(--cyan);
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .btn-scan:hover {
+    background: rgba(0,200,255,0.18);
+    box-shadow: 0 0 20px rgba(0,200,255,0.2);
+  }
+
+  .btn-scan.scanning {
+    border-color: var(--yellow);
+    color: var(--yellow);
+    animation: scan-pulse 0.6s ease infinite alternate;
+  }
+
+  @keyframes scan-pulse {
+    from { background: rgba(255,204,0,0.05); }
+    to { background: rgba(255,204,0,0.12); }
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.5;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    color: var(--text2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .stat-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cyan2);
+  }
+
+  .stat-sub {
+    font-size: 10px;
+    color: var(--text2);
+    margin-top: 3px;
+  }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+  }
+
+  /* SCANNER TABLE */
+  .scanner-panel {
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+
+  .panel-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border: 1px solid var(--border2);
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    padding: 10px 14px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text2);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(0,200,255,0.05);
+    transition: background 0.15s;
+    animation: row-in 0.3s ease both;
+  }
+
+  @keyframes row-in {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  tbody tr:hover {
+    background: rgba(0,200,255,0.04);
+    cursor: pointer;
+  }
+
+  tbody td {
+    padding: 11px 14px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .pair-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .pair-tf {
+    font-size: 9px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  .ob-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    border: 1px solid;
+  }
+
+  .ob-bull {
+    border-color: rgba(0,255,136,0.4);
+    color: var(--green);
+    background: rgba(0,255,136,0.06);
+  }
+
+  .ob-bear {
+    border-color: rgba(255,51,102,0.4);
+    color: var(--red);
+    background: rgba(255,51,102,0.06);
+  }
+
+  .mss-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    border: 1px solid;
+  }
+
+  .mss-bull {
+    border-color: rgba(0,255,136,0.3);
+    color: var(--green);
+    background: rgba(0,255,136,0.04);
+  }
+
+  .mss-bear {
+    border-color: rgba(255,51,102,0.3);
+    color: var(--red);
+    background: rgba(255,51,102,0.04);
+  }
+
+  .mss-none {
+    border-color: rgba(100,130,160,0.3);
+    color: var(--text2);
+    background: transparent;
+  }
+
+  .signal-strong {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border: 1px solid;
+  }
+
+  .sig-buy {
+    color: var(--green);
+    border-color: rgba(0,255,136,0.5);
+    background: rgba(0,255,136,0.08);
+    box-shadow: 0 0 10px rgba(0,255,136,0.1);
+  }
+
+  .sig-sell {
+    color: var(--red);
+    border-color: rgba(255,51,102,0.5);
+    background: rgba(255,51,102,0.08);
+    box-shadow: 0 0 10px rgba(255,51,102,0.1);
+  }
+
+  .sig-wait {
+    color: var(--yellow);
+    border-color: rgba(255,204,0,0.4);
+    background: rgba(255,204,0,0.06);
+  }
+
+  .sig-neutral {
+    color: var(--text2);
+    border-color: var(--border);
+    background: transparent;
+  }
+
+  .price-cell {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    color: #fff;
+  }
+
+  .price-change {
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .change-pos { color: var(--green); }
+  .change-neg { color: var(--red); }
+
+  .strength-bar {
+    width: 60px;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* SIDEBAR */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  .info-panel {
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    overflow: hidden;
+  }
+
+  .info-body { padding: 16px; }
+
+  /* Selected Detail */
+  .detail-pair {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .detail-price {
+    font-family: 'Orbitron', monospace;
+    font-size: 24px;
+    color: var(--cyan2);
+    margin-bottom: 12px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { color: var(--text2); letter-spacing: 1px; text-transform: uppercase; }
+  .detail-val { color: var(--text); font-weight: 600; }
+
+  /* Mini chart */
+  .mini-chart {
+    width: 100%;
+    height: 80px;
+    margin: 12px 0;
+    position: relative;
+  }
+
+  canvas.chart-canvas {
+    width: 100% !important;
+    height: 80px !important;
+  }
+
+  /* Signal history */
+  .signal-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+  }
+
+  .signal-item:last-child { border-bottom: none; }
+
+  .sig-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .sig-dot-buy { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .sig-dot-sell { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .sig-dot-wait { background: var(--yellow); }
+
+  .sig-info { flex: 1; }
+  .sig-pair-name { color: #fff; font-weight: 600; }
+  .sig-desc { color: var(--text2); font-size: 10px; margin-top: 1px; }
+  .sig-time { color: var(--text2); font-size: 10px; }
+
+  /* Loading overlay */
+  .scan-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(5,8,16,0.85);
+    z-index: 10;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .scan-overlay.active { display: flex; }
+
+  .scan-spinner {
+    width: 50px;
+    height: 50px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .scan-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    animation: scan-pulse 0.6s ease infinite alternate;
+  }
+
+  .ob-zone {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text2);
+  }
+
+  .ob-range {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon"></div>
+      <div class="logo-text">
+        <h1>OB·MSS</h1>
+        <span>Order Block &amp; Market Structure Shift Scanner</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        LIVE
+      </div>
+      <div class="scan-time" id="scanTime">--:--:--</div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Timeframe</span>
+      <select id="tfSelect">
+        <option value="15m">15M</option>
+        <option value="1h" selected>1H</option>
+        <option value="4h">4H</option>
+        <option value="1d">1D</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Category</span>
+      <select id="marketSelect">
+        <option value="all">ALL (155)</option>
+        <option value="bluechip">L1 / Blue Chip</option>
+        <option value="defi">DeFi</option>
+        <option value="l2">L2 / Rollup</option>
+        <option value="emerging">Emerging 🆕</option>
+        <option value="meme">Meme 🆕</option>
+        <option value="ai">AI / Data 🆕</option>
+        <option value="rwa">RWA / PayFi 🆕</option>
+        <option value="gaming">Gaming / NFT 🆕</option>
+        <option value="infra">Infrastructure</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Signal</span>
+      <select id="sigFilter">
+        <option value="all">ALL</option>
+        <option value="buy">BUY ONLY</option>
+        <option value="sell">SELL ONLY</option>
+        <option value="wait">SETUP</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Min Strength</span>
+      <input type="range" id="strengthFilter" min="0" max="100" value="0" style="width:80px">
+      <span id="strengthVal" style="font-size:11px;color:var(--cyan);min-width:30px">0%</span>
+    </div>
+    <button class="btn-scan" id="scanBtn" onclick="startScan()">
+      ⟳ SCAN
+    </button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Pairs Scanned</div>
+      <div class="stat-val" id="statTotal">0</div>
+      <div class="stat-sub">Active pairs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Buy Signals</div>
+      <div class="stat-val" id="statBuy" style="color:var(--green)">0</div>
+      <div class="stat-sub">OB + MSS Bullish</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sell Signals</div>
+      <div class="stat-val" id="statSell" style="color:var(--red)">0</div>
+      <div class="stat-sub">OB + MSS Bearish</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Setup / Watch</div>
+      <div class="stat-val" id="statWait" style="color:var(--yellow)">0</div>
+      <div class="stat-sub">Near OB Zone</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="scanner-panel" style="position:relative">
+      <div class="panel-header">
+        <span class="panel-title">Scanner Results</span>
+        <span class="panel-badge" id="resultCount">0 RESULTS</span>
+      </div>
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="scan-spinner"></div>
+        <div class="scan-text">SCANNING MARKETS...</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Pair</th>
+              <th>Price</th>
+              <th>24h</th>
+              <th>Order Block</th>
+              <th>OB Zone</th>
+              <th>MSS</th>
+              <th>Signal</th>
+              <th>Strength</th>
+            </tr>
+          </thead>
+          <tbody id="scanResults"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <!-- Detail Panel -->
+      <div class="info-panel">
+        <div class="panel-header">
+          <span class="panel-title">Detail</span>
+          <span class="panel-badge" id="detailTf">1H</span>
+        </div>
+        <div class="info-body" id="detailBody">
+          <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">
+            ← Pilih pair untuk detail
+          </div>
+        </div>
+      </div>
+
+      <!-- Signal Log -->
+      <div class="info-panel">
+        <div class="panel-header">
+          <span class="panel-title">Signal Log</span>
+          <span class="panel-badge" id="logCount">0</span>
+        </div>
+        <div class="info-body" id="signalLog" style="max-height:260px;overflow-y:auto">
+          <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">
+            Belum ada sinyal
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="info-panel">
+        <div class="panel-header">
+          <span class="panel-title">Keterangan</span>
+        </div>
+        <div class="info-body">
+          <div class="detail-row">
+            <span class="detail-key">OB Bull</span>
+            <span class="detail-val" style="color:var(--green)">Order Block Bullish</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">OB Bear</span>
+            <span class="detail-val" style="color:var(--red)">Order Block Bearish</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">MSS ↑</span>
+            <span class="detail-val" style="color:var(--green)">Market Structure Shift Bullish</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">MSS ↓</span>
+            <span class="detail-val" style="color:var(--red)">Market Structure Shift Bearish</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">BUY</span>
+            <span class="detail-val" style="color:var(--green)">OB Bull + MSS Bullish</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">SELL</span>
+            <span class="detail-val" style="color:var(--red)">OB Bear + MSS Bearish</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">SETUP</span>
+            <span class="detail-val" style="color:var(--yellow)">Harga mendekati OB Zone</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- DATA ENGINE ----
+const PAIRS = [
+  // ── Layer 1 / Blue Chip ──
+  'BTC/USDT','ETH/USDT','BNB/USDT','SOL/USDT','XRP/USDT',
+  'ADA/USDT','DOGE/USDT','AVAX/USDT','DOT/USDT','LINK/USDT',
+  'LTC/USDT','BCH/USDT','ETC/USDT','XLM/USDT','ATOM/USDT',
+  'FIL/USDT','ICP/USDT','VET/USDT','HBAR/USDT','ALGO/USDT',
+  'POL/USDT','S/USDT','PI/USDT','CRO/USDT','NEAR/USDT',
+  // ── DeFi ──
+  'UNI/USDT','AAVE/USDT','MKR/USDT','CRV/USDT','COMP/USDT',
+  'SNX/USDT','SUSHI/USDT','1INCH/USDT','YFI/USDT','CAKE/USDT',
+  'GMX/USDT','DYDX/USDT','LDO/USDT','RPL/USDT','PENDLE/USDT',
+  'JUP/USDT','JTO/USDT','ORCA/USDT','RAY/USDT','KMNO/USDT',
+  // ── L2 / Rollup / Bridge ──
+  'OP/USDT','ARB/USDT','IMX/USDT','METIS/USDT','MANTA/USDT',
+  'ZETA/USDT','ALT/USDT','SCROLL/USDT','ZKJ/USDT','LAYER/USDT',
+  'MOVE/USDT','SIGN/USDT','HYPE/USDT','USUAL/USDT','LUMIA/USDT',
+  // ── Emerging / New Ecosystems ──
+  'APT/USDT','SUI/USDT','SEI/USDT','INJ/USDT','TIA/USDT',
+  'FTM/USDT','EGLD/USDT','ROSE/USDT','KAVA/USDT','OSMO/USDT',
+  'EIGEN/USDT','ENA/USDT','IO/USDT','ZRO/USDT','LISTA/USDT',
+  'BANANA/USDT','REZ/USDT','BB/USDT','NOT/USDT','HMSTR/USDT',
+  'CATI/USDT','AEVO/USDT','SAGA/USDT','OMNI/USDT','W/USDT',
+  // ── Meme / Community ──
+  'WIF/USDT','PEPE/USDT','SHIB/USDT','FLOKI/USDT','BONK/USDT',
+  'DOGS/USDT','TURBO/USDT','NEIRO/USDT','PNUT/USDT','ACT/USDT',
+  'MOODENG/USDT','POPCAT/USDT','BRETT/USDT','MEW/USDT','CHILLGUY/USDT',
+  'PUFFER/USDT','UXLINK/USDT','VANA/USDT','MAJOR/USDT','MEME/USDT',
+  // ── AI / Data ──
+  'FET/USDT','OCEAN/USDT','RENDER/USDT','TAO/USDT','WLD/USDT',
+  'ARKM/USDT','GRT/USDT','KAITO/USDT','AIXBT/USDT','VIRTUAL/USDT',
+  'ATH/USDT','PROMPT/USDT','CGPT/USDT','AIOZ/USDT','NMR/USDT',
+  // ── RWA / PayFi ──
+  'ONDO/USDT','HUMA/USDT','POC/USDT','CFG/USDT','MPL/USDT',
+  // ── Gaming / NFT ──
+  'AXS/USDT','SAND/USDT','MANA/USDT','ENJ/USDT','GALA/USDT',
+  'RON/USDT','BEAM/USDT','ME/USDT','MAGIC/USDT','YGG/USDT',
+  'PIXELS/USDT','PORTAL/USDT','G/USDT','RARE/USDT','ACE/USDT',
+  // ── Infrastructure / Interop ──
+  'TON/USDT','TRX/USDT','CHZ/USDT','QNT/USDT','IOTA/USDT',
+  'BAND/USDT','XTZ/USDT','EOS/USDT','ZIL/USDT','RNDR/USDT',
+  'ENSO/USDT','HYPERLANE/USDT','SYRUP/USDT','TST/USDT','PROM/USDT',
+];
+
+const BASE_PRICES = {
+  // L1 / Blue Chip
+  'BTC/USDT':68500,'ETH/USDT':3450,'BNB/USDT':580,'SOL/USDT':175,'XRP/USDT':0.54,
+  'ADA/USDT':0.48,'DOGE/USDT':0.165,'AVAX/USDT':38,'DOT/USDT':7.8,'LINK/USDT':14.5,
+  'LTC/USDT':85,'BCH/USDT':480,'ETC/USDT':28,'XLM/USDT':0.12,'ATOM/USDT':8.9,
+  'FIL/USDT':5.8,'ICP/USDT':12.5,'VET/USDT':0.038,'HBAR/USDT':0.085,'ALGO/USDT':0.175,
+  'POL/USDT':0.42,'S/USDT':0.55,'PI/USDT':1.35,'CRO/USDT':0.092,'NEAR/USDT':5.4,
+  // DeFi
+  'UNI/USDT':10.2,'AAVE/USDT':92,'MKR/USDT':2850,'CRV/USDT':0.42,'COMP/USDT':58,
+  'SNX/USDT':2.8,'SUSHI/USDT':1.12,'1INCH/USDT':0.38,'YFI/USDT':7200,'CAKE/USDT':2.5,
+  'GMX/USDT':22,'DYDX/USDT':1.8,'LDO/USDT':1.65,'RPL/USDT':18,'PENDLE/USDT':4.2,
+  'JUP/USDT':0.82,'JTO/USDT':3.1,'ORCA/USDT':4.6,'RAY/USDT':4.5,'KMNO/USDT':0.065,
+  // L2 / Rollup
+  'OP/USDT':2.8,'ARB/USDT':1.05,'IMX/USDT':1.75,'METIS/USDT':38,'MANTA/USDT':1.1,
+  'ZETA/USDT':0.72,'ALT/USDT':0.22,'SCROLL/USDT':0.78,'ZKJ/USDT':0.18,'LAYER/USDT':0.52,
+  'MOVE/USDT':0.68,'SIGN/USDT':0.12,'HYPE/USDT':18.5,'USUAL/USDT':0.45,'LUMIA/USDT':0.88,
+  // Emerging
+  'APT/USDT':9.8,'SUI/USDT':1.45,'SEI/USDT':0.52,'INJ/USDT':28,'TIA/USDT':7.2,
+  'FTM/USDT':0.72,'EGLD/USDT':42,'ROSE/USDT':0.095,'KAVA/USDT':0.68,'OSMO/USDT':0.55,
+  'EIGEN/USDT':3.2,'ENA/USDT':0.58,'IO/USDT':3.8,'ZRO/USDT':5.5,'LISTA/USDT':0.48,
+  'BANANA/USDT':28,'REZ/USDT':0.068,'BB/USDT':0.48,'NOT/USDT':0.0078,'HMSTR/USDT':0.0024,
+  'CATI/USDT':0.085,'AEVO/USDT':0.55,'SAGA/USDT':1.2,'OMNI/USDT':8.5,'W/USDT':0.28,
+  // Meme
+  'WIF/USDT':2.1,'PEPE/USDT':0.0000115,'SHIB/USDT':0.0000245,'FLOKI/USDT':0.00018,'BONK/USDT':0.000025,
+  'DOGS/USDT':0.00062,'TURBO/USDT':0.0048,'NEIRO/USDT':0.00058,'PNUT/USDT':0.42,'ACT/USDT':0.12,
+  'MOODENG/USDT':0.25,'POPCAT/USDT':0.68,'BRETT/USDT':0.082,'MEW/USDT':0.0065,'CHILLGUY/USDT':0.22,
+  'PUFFER/USDT':0.18,'UXLINK/USDT':1.2,'VANA/USDT':8.5,'MAJOR/USDT':0.032,'MEME/USDT':0.032,
+  // AI / Data
+  'FET/USDT':1.62,'OCEAN/USDT':0.88,'RENDER/USDT':7.8,'TAO/USDT':385,'WLD/USDT':2.45,
+  'ARKM/USDT':1.85,'GRT/USDT':0.18,'KAITO/USDT':1.35,'AIXBT/USDT':0.28,'VIRTUAL/USDT':1.85,
+  'ATH/USDT':0.038,'PROMPT/USDT':0.22,'CGPT/USDT':0.18,'AIOZ/USDT':0.78,'NMR/USDT':18,
+  // RWA / PayFi
+  'ONDO/USDT':1.05,'HUMA/USDT':0.045,'POC/USDT':0.18,'CFG/USDT':0.35,'MPL/USDT':12,
+  // Gaming / NFT
+  'AXS/USDT':6.8,'SAND/USDT':0.42,'MANA/USDT':0.38,'ENJ/USDT':0.22,'GALA/USDT':0.038,
+  'RON/USDT':2.8,'BEAM/USDT':0.022,'ME/USDT':3.2,'MAGIC/USDT':0.78,'YGG/USDT':0.42,
+  'PIXELS/USDT':0.22,'PORTAL/USDT':0.35,'G/USDT':0.082,'RARE/USDT':0.068,'ACE/USDT':1.5,
+  // Infrastructure
+  'TON/USDT':5.6,'TRX/USDT':0.125,'CHZ/USDT':0.088,'QNT/USDT':88,'IOTA/USDT':0.22,
+  'BAND/USDT':1.45,'XTZ/USDT':0.92,'EOS/USDT':0.72,'ZIL/USDT':0.018,'RNDR/USDT':7.8,
+  'ENSO/USDT':0.48,'HYPERLANE/USDT':0.22,'SYRUP/USDT':0.12,'TST/USDT':0.058,'PROM/USDT':3.5,
+};
+
+const CATEGORIES = {
+  bluechip:  ['BTC','ETH','BNB','SOL','XRP','ADA','DOGE','AVAX','DOT','LINK','LTC','BCH','ETC','XLM','ATOM','FIL','ICP','VET','HBAR','ALGO','POL','S','PI','CRO','NEAR'],
+  defi:      ['UNI','AAVE','MKR','CRV','COMP','SNX','SUSHI','1INCH','YFI','CAKE','GMX','DYDX','LDO','RPL','PENDLE','JUP','JTO','ORCA','RAY','KMNO'],
+  l2:        ['OP','ARB','IMX','METIS','MANTA','ZETA','ALT','SCROLL','ZKJ','LAYER','MOVE','SIGN','HYPE','USUAL','LUMIA'],
+  emerging:  ['APT','SUI','SEI','INJ','TIA','FTM','EGLD','ROSE','KAVA','OSMO','EIGEN','ENA','IO','ZRO','LISTA','BANANA','REZ','BB','NOT','HMSTR','CATI','AEVO','SAGA','OMNI','W'],
+  meme:      ['WIF','PEPE','SHIB','FLOKI','BONK','DOGS','TURBO','NEIRO','PNUT','ACT','MOODENG','POPCAT','BRETT','MEW','CHILLGUY','PUFFER','UXLINK','VANA','MAJOR','MEME'],
+  ai:        ['FET','OCEAN','RENDER','TAO','WLD','ARKM','GRT','KAITO','AIXBT','VIRTUAL','ATH','PROMPT','CGPT','AIOZ','NMR'],
+  rwa:       ['ONDO','HUMA','POC','CFG','MPL'],
+  gaming:    ['AXS','SAND','MANA','ENJ','GALA','RON','BEAM','ME','MAGIC','YGG','PIXELS','PORTAL','G','RARE','ACE'],
+  infra:     ['TON','TRX','CHZ','QNT','IOTA','BAND','XTZ','EOS','ZIL','RNDR','ENSO','HYPERLANE','SYRUP','TST','PROM'],
+};
+
+let currentData = [];
+let signalLog = [];
+let selectedPair = null;
+
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateOBData(pair) {
+  const base = BASE_PRICES[pair] || 1;
+  const price = base * (1 + rand(-0.05, 0.05));
+  const change24 = rand(-8, 8);
+
+  // Determine OB type
+  const obType = pick(['bull', 'bear', 'bull', 'bull', 'bear']); // slight bias
+
+  // OB zone
+  const obOffset = rand(0.01, 0.04);
+  let obHigh, obLow;
+  if (obType === 'bull') {
+    obLow = price * (1 - obOffset - rand(0.005, 0.015));
+    obHigh = price * (1 - obOffset + rand(0.005, 0.015));
+  } else {
+    obLow = price * (1 + obOffset - rand(0.005, 0.015));
+    obHigh = price * (1 + obOffset + rand(0.005, 0.015));
+  }
+
+  // MSS
+  const mssOptions = ['bull', 'bear', 'none'];
+  let mss;
+  // Correlate MSS with OB type for realistic signals
+  const r = Math.random();
+  if (obType === 'bull') {
+    mss = r < 0.5 ? 'bull' : r < 0.75 ? 'none' : 'bear';
+  } else {
+    mss = r < 0.5 ? 'bear' : r < 0.75 ? 'none' : 'bull';
+  }
+
+  // Signal logic
+  let signal;
+  const nearOB = Math.abs(price - (obHigh + obLow) / 2) / price < 0.03;
+  if (obType === 'bull' && mss === 'bull') signal = 'buy';
+  else if (obType === 'bear' && mss === 'bear') signal = 'sell';
+  else if (nearOB) signal = 'wait';
+  else signal = 'neutral';
+
+  // Strength
+  let strength = 0;
+  if (signal === 'buy' || signal === 'sell') strength = randInt(60, 98);
+  else if (signal === 'wait') strength = randInt(35, 65);
+  else strength = randInt(10, 40);
+
+  return {
+    pair, price, change24, obType, obHigh, obLow, mss, signal, strength,
+    volume: rand(1e6, 5e9),
+    tf: document.getElementById('tfSelect').value
+  };
+}
+
+function formatPrice(p) {
+  if (p >= 1000) return p.toFixed(2);
+  if (p >= 1) return p.toFixed(4);
+  if (p >= 0.001) return p.toFixed(6);
+  return p.toFixed(8);
+}
+
+function formatOBZone(d) {
+  return `${formatPrice(d.obLow)} – ${formatPrice(d.obHigh)}`;
+}
+
+function getSignalHTML(sig) {
+  if (sig === 'buy') return `<span class="signal-strong sig-buy">▲ BUY</span>`;
+  if (sig === 'sell') return `<span class="signal-strong sig-sell">▼ SELL</span>`;
+  if (sig === 'wait') return `<span class="signal-strong sig-wait">◆ SETUP</span>`;
+  return `<span class="signal-strong sig-neutral">— WAIT</span>`;
+}
+
+function getOBHTML(type) {
+  if (type === 'bull') return `<span class="ob-tag ob-bull">▲ BULL OB</span>`;
+  return `<span class="ob-tag ob-bear">▼ BEAR OB</span>`;
+}
+
+function getMSSHTML(mss) {
+  if (mss === 'bull') return `<span class="mss-tag mss-bull">↑ MSS</span>`;
+  if (mss === 'bear') return `<span class="mss-tag mss-bear">↓ MSS</span>`;
+  return `<span class="mss-tag mss-none">— NO MSS</span>`;
+}
+
+function getStrengthColor(s) {
+  if (s >= 75) return 'var(--green)';
+  if (s >= 50) return 'var(--yellow)';
+  return 'var(--text2)';
+}
+
+function renderTable(data) {
+  const sigFilter = document.getElementById('sigFilter').value;
+  const minStrength = parseInt(document.getElementById('strengthFilter').value);
+  const catFilter = document.getElementById('marketSelect').value;
+
+  let filtered = data.filter(d => {
+    if (sigFilter !== 'all' && d.signal !== sigFilter) return false;
+    if (d.strength < minStrength) return false;
+    if (catFilter !== 'all') {
+      const base = d.pair.split('/')[0];
+      if (!CATEGORIES[catFilter] || !CATEGORIES[catFilter].includes(base)) return false;
+    }
+    return true;
+  });
+
+  // Sort by strength desc
+  filtered.sort((a, b) => b.strength - a.strength);
+
+  const tbody = document.getElementById('scanResults');
+  tbody.innerHTML = '';
+
+  filtered.forEach((d, i) => {
+    const tr = document.createElement('tr');
+    tr.style.animationDelay = `${i * 30}ms`;
+    tr.innerHTML = `
+      <td>
+        <div class="pair-name">${d.pair.split('/')[0]}<span style="color:var(--text2);font-size:10px">/${d.pair.split('/')[1]}</span></div>
+        <div class="pair-tf">${d.tf.toUpperCase()}</div>
+      </td>
+      <td>
+        <div class="price-cell">$${formatPrice(d.price)}</div>
+        <div class="price-change ${d.change24 >= 0 ? 'change-pos' : 'change-neg'}">${d.change24 >= 0 ? '+' : ''}${d.change24.toFixed(2)}%</div>
+      </td>
+      <td class="${d.change24 >= 0 ? 'change-pos' : 'change-neg'}" style="font-family:'Orbitron',monospace;font-size:11px">${d.change24 >= 0 ? '+' : ''}${d.change24.toFixed(2)}%</td>
+      <td>${getOBHTML(d.obType)}</td>
+      <td><span class="ob-range" style="font-size:10px;color:var(--text2)">${formatOBZone(d)}</span></td>
+      <td>${getMSSHTML(d.mss)}</td>
+      <td>${getSignalHTML(d.signal)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="strength-bar">
+            <div class="strength-fill" style="width:${d.strength}%;background:${getStrengthColor(d.strength)}"></div>
+          </div>
+          <span style="font-size:10px;color:${getStrengthColor(d.strength)};font-family:'Orbitron',monospace">${d.strength}%</span>
+        </div>
+      </td>
+    `;
+    tr.onclick = () => showDetail(d);
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('resultCount').textContent = `${filtered.length} RESULTS`;
+
+  // Stats
+  const all = data;
+  document.getElementById('statTotal').textContent = all.length;
+  document.getElementById('statBuy').textContent = all.filter(d => d.signal === 'buy').length;
+  document.getElementById('statSell').textContent = all.filter(d => d.signal === 'sell').length;
+  document.getElementById('statWait').textContent = all.filter(d => d.signal === 'wait').length;
+}
+
+function showDetail(d) {
+  selectedPair = d;
+  document.getElementById('detailTf').textContent = d.tf.toUpperCase();
+
+  const html = `
+    <div class="detail-pair">${d.pair}</div>
+    <div class="detail-price">$${formatPrice(d.price)}</div>
+
+    <canvas id="miniChart" class="chart-canvas"></canvas>
+
+    <div class="detail-row">
+      <span class="detail-key">Signal</span>
+      <span>${getSignalHTML(d.signal)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">Order Block</span>
+      <span>${getOBHTML(d.obType)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">OB Zone</span>
+      <span class="detail-val ob-range" style="font-size:10px">${formatOBZone(d)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">MSS</span>
+      <span>${getMSSHTML(d.mss)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">Strength</span>
+      <span class="detail-val" style="color:${getStrengthColor(d.strength)}">${d.strength}%</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">24h Change</span>
+      <span class="detail-val ${d.change24 >= 0 ? 'change-pos' : 'change-neg'}">${d.change24 >= 0 ? '+' : ''}${d.change24.toFixed(2)}%</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">Volume 24h</span>
+      <span class="detail-val">$${(d.volume / 1e6).toFixed(1)}M</span>
+    </div>
+    <div class="detail-row" style="border:none;padding-top:12px">
+      <span class="detail-key" style="color:${d.signal === 'buy' ? 'var(--green)' : d.signal === 'sell' ? 'var(--red)' : 'var(--yellow)'}">
+        ${d.signal === 'buy' ? '→ Harga dekat OB Bullish + MSS konfirmasi arah naik' :
+          d.signal === 'sell' ? '→ Harga dekat OB Bearish + MSS konfirmasi arah turun' :
+          d.signal === 'wait' ? '→ Harga mendekati zona OB, tunggu konfirmasi MSS' :
+          '→ Belum ada setup yang valid'}
+      </span>
+    </div>
+  `;
+
+  document.getElementById('detailBody').innerHTML = html;
+  drawMiniChart(d);
+}
+
+function drawMiniChart(d) {
+  setTimeout(() => {
+    const canvas = document.getElementById('miniChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth || 300;
+    canvas.height = 80;
+    const W = canvas.width, H = canvas.height;
+
+    // Generate fake price history
+    const points = [];
+    let p = d.price * (1 - rand(0.03, 0.06));
+    for (let i = 0; i < 40; i++) {
+      p *= (1 + rand(-0.015, 0.015));
+      points.push(p);
+    }
+    points.push(d.price);
+
+    const min = Math.min(...points) * 0.999;
+    const max = Math.max(...points) * 1.001;
+    const toY = v => H - ((v - min) / (max - min)) * H * 0.85 - H * 0.075;
+    const toX = i => (i / (points.length - 1)) * W;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // OB zone band
+    const obY1 = toY(d.obHigh);
+    const obY2 = toY(d.obLow);
+    ctx.fillStyle = d.obType === 'bull' ? 'rgba(0,255,136,0.08)' : 'rgba(255,51,102,0.08)';
+    ctx.fillRect(0, Math.min(obY1, obY2), W, Math.abs(obY2 - obY1));
+    const obColor = d.obType === 'bull' ? 'rgba(0,255,136,0.4)' : 'rgba(255,51,102,0.4)';
+    ctx.strokeStyle = obColor;
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(0, obY1); ctx.lineTo(W, obY1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, obY2); ctx.lineTo(W, obY2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Price line
+    const gradient = ctx.createLinearGradient(0, 0, W, 0);
+    gradient.addColorStop(0, 'rgba(0,200,255,0.5)');
+    gradient.addColorStop(1, '#00eeff');
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    points.forEach((v, i) => {
+      if (i === 0) ctx.moveTo(toX(i), toY(v));
+      else ctx.lineTo(toX(i), toY(v));
+    });
+    ctx.stroke();
+
+    // Current price dot
+    ctx.fillStyle = '#00eeff';
+    ctx.beginPath();
+    ctx.arc(toX(points.length - 1), toY(d.price), 3, 0, Math.PI * 2);
+    ctx.fill();
+  }, 50);
+}
+
+function addToLog(data) {
+  const signals = data.filter(d => d.signal === 'buy' || d.signal === 'sell' || d.signal === 'wait');
+  signals.slice(0, 6).forEach(d => {
+    const now = new Date();
+    signalLog.unshift({
+      pair: d.pair,
+      signal: d.signal,
+      desc: d.signal === 'buy' ? `OB Bull + MSS ↑ @ $${formatPrice(d.price)}` :
+            d.signal === 'sell' ? `OB Bear + MSS ↓ @ $${formatPrice(d.price)}` :
+            `Near OB Zone @ $${formatPrice(d.price)}`,
+      time: now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})
+    });
+  });
+  signalLog = signalLog.slice(0, 20);
+
+  const logEl = document.getElementById('signalLog');
+  if (signalLog.length === 0) {
+    logEl.innerHTML = '<div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">Belum ada sinyal</div>';
+    return;
+  }
+
+  logEl.innerHTML = signalLog.map(s => `
+    <div class="signal-item">
+      <div class="sig-dot ${s.signal === 'buy' ? 'sig-dot-buy' : s.signal === 'sell' ? 'sig-dot-sell' : 'sig-dot-wait'}"></div>
+      <div class="sig-info">
+        <div class="sig-pair-name">${s.pair}</div>
+        <div class="sig-desc">${s.desc}</div>
+      </div>
+      <div class="sig-time">${s.time}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('logCount').textContent = signalLog.length;
+}
+
+function startScan() {
+  const btn = document.getElementById('scanBtn');
+  const overlay = document.getElementById('scanOverlay');
+
+  btn.classList.add('scanning');
+  btn.textContent = '⟳ SCANNING...';
+  overlay.classList.add('active');
+
+  const scanDuration = rand(1200, 2200);
+
+  setTimeout(() => {
+    currentData = PAIRS.map(p => generateOBData(p));
+    renderTable(currentData);
+    addToLog(currentData);
+
+    btn.classList.remove('scanning');
+    btn.textContent = '⟳ SCAN';
+    overlay.classList.remove('active');
+  }, scanDuration);
+}
+
+document.getElementById('marketSelect').addEventListener('change', () => {
+  if (currentData.length > 0) renderTable(currentData);
+});
+
+// Controls
+document.getElementById('strengthFilter').addEventListener('input', function() {
+  document.getElementById('strengthVal').textContent = this.value + '%';
+  if (currentData.length > 0) renderTable(currentData);
+});
+
+document.getElementById('sigFilter').addEventListener('change', () => {
+  if (currentData.length > 0) renderTable(currentData);
+});
+
+// Clock
+function updateClock() {
+  document.getElementById('scanTime').textContent = new Date().toLocaleTimeString('id-ID');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Auto-refresh every 30s
+setInterval(() => {
+  if (currentData.length > 0) startScan();
+}, 30000);
+
+// Initial scan
+window.onload = () => startScan();
+</script>
+</body>
+</html>
